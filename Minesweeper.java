@@ -25,6 +25,7 @@ public class Minesweeper {
     JLabel textLabel = new JLabel();
     JPanel textPanel = new JPanel();
     JPanel boardPanel = new JPanel();
+    JButton resetButton = new JButton("Reset");
 
     int mineCount = 10;
     MineTile[][] board = new MineTile[numRows][numCols];
@@ -48,8 +49,12 @@ public class Minesweeper {
         textLabel.setText("Minesweeper");
         textLabel.setOpaque(true);
 
+        resetButton.setFocusable(false);
+        resetButton.addActionListener(e -> resetGame());
+
         textPanel.setLayout(new BorderLayout());
         textPanel.add(textLabel);
+        textPanel.add(resetButton, BorderLayout.EAST);
         frame.add(textPanel, BorderLayout.NORTH);
 
         boardPanel.setLayout(new GridLayout(numRows, numCols)); // 8 x 8
@@ -106,6 +111,61 @@ public class Minesweeper {
 
         setMines();
     }
+
+    void resetGame() {
+        gameOver = false;
+        tilesClicked = 0;
+        textLabel.setText("Minesweeper");
+
+        boardPanel.removeAll(); // Clear old board
+        boardPanel.revalidate();
+        boardPanel.repaint();
+
+        createBoard(); // Recreate board
+    }
+
+    void createBoard() {
+        board = new MineTile[numRows][numCols]; // Reset board array
+        mineList = new ArrayList<>();
+
+        for (int r = 0; r < numRows; r++) {
+            for (int c = 0; c < numCols; c++) {
+                MineTile tile = new MineTile(r, c);
+                board[r][c] = tile;
+                tile.setFocusable(false);
+                tile.setMargin(new Insets(0, 0, 0, 0));
+                tile.setFont(new Font("Arial Unicode MS", Font.PLAIN, 45));
+
+                tile.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mousePressed(MouseEvent e) {
+                        if (gameOver) return;
+                        MineTile tile = (MineTile) e.getSource();
+                        if (e.getButton() == MouseEvent.BUTTON1) { // Left-click
+                            if (tile.getText().equals("")) {
+                                if (mineList.contains(tile)) {
+                                    revealMines();
+                                } else {
+                                    checkMine(tile.r, tile.c);
+                                }
+                            }
+                        } else if (e.getButton() == MouseEvent.BUTTON3) { // Right-click
+                            if (tile.getText().equals("") && tile.isEnabled()) {
+                                tile.setText("🚩");
+                            } else if (tile.getText().equals("🚩")) {
+                                tile.setText("");
+                            }
+                        }
+                    }
+                });
+
+                boardPanel.add(tile);
+            }
+        }
+
+        setMines(); // Reinitialize mines
+    }
+
 
     void setMines() {
         mineList = new ArrayList<MineTile>();
